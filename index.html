@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>Canvas Snowflakes</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="jquery-3.3.1.min.js" type="text/javascript"></script>
+        <style>
+            html, body {
+                margin: 0px;
+                width: 100%;
+                height: 100%;
+                background-color: skyblue;
+            }
+            .backgroundHolidayDayColor {
+                background-color: skyblue;
+            }
+            .backgroundHolidayNightColor {
+                background-color: #008296;
+            }
+            .snowAnimationCanvas {
+                position: absolute;
+                z-index: 3;
+            }
+            .scene_container {
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="scene_container" style="width: 100%">
+            <canvas class="snowAnimationCanvas" width="2543" height="110"></canvas>
+        </div>
+        <script>
+
+            // quickly modify styles for day or night - just makes the
+            // background a little darker at night, funtion calls itself
+            (function () {
+
+                let hour = new Date().getHours();
+
+                if (hour > 7 && hour < 20) {
+                    $('.scene_container').addClass('backgroundHolidayDayColor');
+                } else {
+                    $('.scene_container').addClass('backgroundHolidayNightColor');
+                }
+            })();
+
+
+            let Flake = function (containerWidth, containerHeight, id, maxWeight, maxSpeed) {
+                // Left to right random position
+                this.xPos = randomIntBetween(0, containerWidth);
+                // Top to bottom random position above visible region
+                this.yPos = randomIntBetween(0, containerHeight) * -1;
+                // Random horizontal travel
+                this.curveWidth = randomFloatBetween(0, 1);
+                // Random horizontal travel speed
+                this.frequency = randomFloatBetween(0, Math.PI);
+                // Weight determines Size, Speed and opacity
+                this.weight = randomIntBetween(1, maxWeight);
+                // Random opacity
+                this.opacity = (this.weight / maxWeight);
+                // random speed for downward movement
+                this.speed = (this.weight / maxWeight) * maxSpeed;
+
+                // called during update cycle
+                this.move = function () {
+                    this.xPos += Math.cos(this.frequency) * this.curveWidth;
+                    this.yPos += this.speed;
+                }
+                
+                // flake fell out of view, reset back to top, we don't need to
+                // random height is because it's already random, random xPos
+                // just to mix it up
+                this.reset = function (xPosLimit) {
+                    this.yPos = -1;
+                    this.xPos = randomIntBetween(0, xPosLimit);
+                }
+
+                // standard random range method
+                function randomIntBetween(min, max) {
+                    let num = Math.random() * (max - min + 1) + min;
+                    return Math.floor(num);
+                }
+                // and again
+                function randomFloatBetween(min, max) {
+                    return Math.random() * (max - min) + min;
+                }
+
+                return this;
+            };
+
+
+
+
+            let Snow = function (backgroundSelector, numberOfSnowflakes, maxWeight, maxSpeed) {
+
+                let flakes = [];
+
+                let background = $(backgroundSelector);
+                let containerWidth = background.width();
+                let containerHeight = $('.scene_container').height();
+
+                let useCanvas = isCanvasSupported();
+                let ctx;
+                let canvas;
+
+                this.init = function () {
+                    
+                    if(!useCanvas) {
+                        return false;
+                    }
+
+                    // Generate flakes
+                    for (let i = 0; i < numberOfSnowflakes; i++) {
+                        flakes.push(new Flake(background.width(), background.height(), 'flake' + i, maxWeight, maxSpeed));
+                    }
+                    // Get canvas
+                    canvas = document.querySelector('.snowAnimationCanvas');
+                    // Set size as soon as we get it
+                    scaleCanvas();
+                    // Get canvas context
+                    ctx = canvas.getContext('2d');
+                    // Now resize nows what to do
+                    $(window).resize(scaleCanvas);
+                    // Trigger loop for animation
+                    canvasAnimationLoop();
+
+                };
+
+                function scaleCanvas() {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    containerHeight = canvas.height;
+                }
+
+                function isCanvasSupported() {
+                    let elem = document.createElement('canvas');
+                    return !!(elem.getContext && elem.getContext('2d') && window.requestAnimationFrame);
+                }
+
+                function canvasAnimationLoop() {
+                    ctx.save();
+                    ctx.clearRect(0, 0, containerWidth, containerHeight);
+                    ctx.restore();
+                    for (let i = 0; i < flakes.length; i++) {
+                        // Move every flake and repaint
+                        let snowflake = flakes[i];
+                        snowflake.move();
+                        ctx.beginPath();
+                        ctx.arc(snowflake.xPos, snowflake.yPos, snowflake.weight, 0, 2 * Math.PI, false);
+                        ctx.fillStyle = 'rgba(255, 255, 255, ' + snowflake.opacity + ')';
+                        ctx.fill();
+                        if (snowflake.yPos >= containerHeight) {
+                            snowflake.reset(containerWidth);
+                        }
+                    }
+                    requestAnimationFrame(canvasAnimationLoop);
+                }
+
+                return this;
+            };
+
+
+            let snow = new Snow('.scene_container', 1000, 3, 2.5);
+            snow.init();
+
+
+
+        </script>
+    </body>
+</html>
