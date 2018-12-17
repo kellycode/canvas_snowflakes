@@ -3,20 +3,19 @@
     <head>
         <meta charset="utf-8">
         <title>Canvas Snowflakes</title>
-        <meta http-equiv='X-UA-Compatible' content='IE=edge,chrome=1'>
+        <meta http-equiv='X-UA-Compatible' content='IE=edge'>
         <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1">
         <meta name="description" content="Simple Snwflakes in a Canvas">
         <link rel="icon" href="favicon.ico">
         <link rel='shortcut icon' type='image/x-icon' href='favicon.ico' />
         <link rel="shortcut icon" type="image/png" href="favicon.png"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="assets/jquery-3.3.1.min.js" type="text/javascript"></script>
         <style>
-            html, body {                
+            html, body {
+                margin: 0;
                 width: 100%;
                 height: 100%;
-                margin: 0; 
-                font-family: Verdana; 
+                font-family: Verdana;
                 background-color: skyblue;
                 position: relative;
                 overflow: hidden;
@@ -25,6 +24,8 @@
             }
             .snowAnimationCanvas {
                 position: absolute;
+                top: 0px;
+                left: 0px;
                 z-index: 1;
             }
             .scene_container {
@@ -49,7 +50,7 @@
         </style>
     </head>
     <body>
-        <div class="scene_container">
+        <div id="animation_container" class="scene_container">
             <canvas class="snowAnimationCanvas"></canvas>
         </div>
 
@@ -101,13 +102,12 @@
                     constructor(containerSelector, numberOfSnowflakes, maxWeight, maxSpeed) {
                         // for callback use
                         this.scope = this;
+                        // store containing div info
+                        this.container = document.getElementById(containerSelector);
+                        this.containerWidth = this.container.clientWidth;
+                        this.containerHeight = this.container.clientHeight;
                         // set flake weight (size) for screen size
                         this.getFlakeWeight = () => 0.0020 * (this.containerWidth + this.containerHeight);
-                        // store containing div info
-                        this.container = $(containerSelector);
-                        this.containerWidth = this.container.width();
-                        this.containerHeight = this.container.height();
-                        console.log((this.containerWidth + this.containerHeight))
                         // snowflake params
                         this.numberOfSnowflakes = numberOfSnowflakes;
                         this.maxWeight = this.getFlakeWeight();
@@ -124,7 +124,7 @@
                         this.flakes = [];
                         // Generate flakes
                         for (let i = 0; i < this.numberOfSnowflakes; i++) {
-                            this.flakes.push(new Flake(this.container.width(), this.container.height(), 'flake' + i, this.maxWeight, this.maxSpeed));
+                            this.flakes.push(new Flake(this.containerWidth, this.containerHeight, 'flake' + i, this.maxWeight, this.maxSpeed));
                         }
                     }
                     // starting point for all things snow
@@ -133,14 +133,12 @@
                         if (!this.useCanvas) {
                             return false;
                         }
-                        // Generate flakes
-                        this.generateSnowFlakes();
                         // Set size as soon as we get it
                         this.scaleCanvas();
                         // Let window resize nows what to do
                         // scope seems more clear than using bind
                         let scope = this;
-                        $(window).bind('resize', function () {
+                        window.addEventListener('resize', function () {
                             scope.scaleCanvas();
                         });
                         // Trigger loop for animation
@@ -148,10 +146,8 @@
                     }
                     // resize the canvas as needed
                     scaleCanvas() {
-                        this.canvas.width = this.container.width();//window.innerWidth;
-                        this.canvas.height = this.container.height();//window.innerHeight;
-                        this.containerHeight = this.canvas.height;
-                        this.containerWidth = this.canvas.width;
+                        this.containerWidth = this.canvas.width = this.container.clientWidth;
+                        this.containerHeight = this.canvas.height = this.container.clientHeight;
                         // modify snowflake size based on device width + height
                         this.maxWeight = this.getFlakeWeight();
                         // rebuild snowflakes on resize
@@ -163,18 +159,28 @@
                         return !!(elem.getContext && elem.getContext('2d') && window.requestAnimationFrame);
                     }
                     // main animation loop
+                    // scope is used because 'this' isn't available in requestAnimationFrame
                     canvasAnimationLoop(scope) {
+                        // save the canvas context
                         this.ctx.save();
+                        // clear it
                         this.ctx.clearRect(0, 0, this.containerWidth, this.containerHeight);
+                        // restore the canvas context
                         this.ctx.restore();
+                        // loop through the array, move and redraw each snowflake
                         for (let i = 0; i < this.flakes.length; i++) {
-                            // Move every flake and repaint
+                            // get a convenient handle
                             let snowflake = this.flakes[i];
+                            // call it's move method
                             snowflake.move();
+                            // draw it on the canvas
                             this.ctx.beginPath();
                             this.ctx.arc(snowflake.xPos, snowflake.yPos, snowflake.weight, 0, 2 * Math.PI, false);
+                            // using rgba for the opacity
                             this.ctx.fillStyle = 'rgba(255, 255, 255, ' + snowflake.opacity + ')';
                             this.ctx.fill();
+                            // if it's reached the bottom, put it back to just
+                            // above the top of the screen
                             if (snowflake.yPos >= this.containerHeight) {
                                 snowflake.reset(this.containerWidth);
                             }
@@ -187,22 +193,23 @@
                 }
 
                 /*
-                 * start it up
-                 * 
-                 * TODO: size should be modified for smaller devices
-                 * 
                  * Canvas container ID
                  *  @param {String} backgroundSelector
+                 *  
                  * How many snowflakes
                  *  @param {Number} numberOfSnowflakes
+                 *  
                  * Weight determines Size, Speed and Opacity to simulate distance
+                 * and is randomized
                  *  @param {Number} maxWeight
-                 * Effects speed for downward movement
+                 *  
+                 * Effects speed for downward movement is randomized
                  *  @param {Number} maxSpeed
                  */
-                let snow = new Snow('.scene_container', 900, 6, 2.5);
+                let snow = new Snow('animation_container', 900, 6, 2.5);
                 snow.init();
             })();
+            
         </script>
     </body>
 </html>
