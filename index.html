@@ -30,14 +30,19 @@
             .scene_container {
                 width: 100%;
                 height: 100%;
+                position: absolute;
+                top: 0px;
+                left: 0px;
+                background-repeat: no-repeat;
+                background-size: 100% 100%;
             }
             @media screen and (orientation:portrait) {
-                body {
+                .scene_container {
                     background-image: url("assets/cbc_p.jpg");
                 }
             }
             @media screen and (orientation:landscape) {
-                body {
+                .scene_container {
                     background-image: url("assets/cbc_l.jpg");
                 }
             }
@@ -96,16 +101,19 @@
                     constructor(containerSelector, numberOfSnowflakes, maxWeight, maxSpeed) {
                         // for callback use
                         this.scope = this;
-                        // snowflake params
-                        this.numberOfSnowflakes = numberOfSnowflakes;
-                        this.maxWeight = maxWeight;
-                        this.maxSpeed = maxSpeed;
-                        // snowflake array
-                        this.flakes = [];
+                        // set flake weight (size) for screen size
+                        this.getFlakeWeight = () => 0.0020 * (this.containerWidth + this.containerHeight);
                         // store containing div info
                         this.container = $(containerSelector);
                         this.containerWidth = this.container.width();
                         this.containerHeight = this.container.height();
+                        console.log((this.containerWidth + this.containerHeight))
+                        // snowflake params
+                        this.numberOfSnowflakes = numberOfSnowflakes;
+                        this.maxWeight = this.getFlakeWeight();
+                        this.maxSpeed = maxSpeed;
+                        // snowflake array
+                        this.flakes = [];
                         // store canvas info
                         this.useCanvas = this.isCanvasSupported();
                         this.canvas = document.querySelector('.snowAnimationCanvas');
@@ -119,7 +127,7 @@
                             this.flakes.push(new Flake(this.container.width(), this.container.height(), 'flake' + i, this.maxWeight, this.maxSpeed));
                         }
                     }
-                    // starting point
+                    // starting point for all things snow
                     init() {
                         // If we don't have canvas (unlikely)
                         if (!this.useCanvas) {
@@ -140,12 +148,13 @@
                     }
                     // resize the canvas as needed
                     scaleCanvas() {
-                        this.canvas.width = window.innerWidth;
-                        this.canvas.height = window.innerHeight;
+                        this.canvas.width = this.container.width();//window.innerWidth;
+                        this.canvas.height = this.container.height();//window.innerHeight;
                         this.containerHeight = this.canvas.height;
                         this.containerWidth = this.canvas.width;
-
-                        // need to rebuild snowflakes on resize
+                        // modify snowflake size based on device width + height
+                        this.maxWeight = this.getFlakeWeight();
+                        // rebuild snowflakes on resize
                         this.generateSnowFlakes();
                     }
                     // quick check that we have canvas available
