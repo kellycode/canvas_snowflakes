@@ -5,3 +5,4 @@ More snow stuff...
 
 - Canvas Falling Snow
 - Javascript Classes (cause they're cool)
+- Inspired by Charlie Brown
