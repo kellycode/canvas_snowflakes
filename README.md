@@ -1,5 +1,5 @@
 
-More snow stuff...
+More just for fun snow stuff...
 
 ![simple snowflakes](https://kellycode.github.io/canvas_snowflakes/screen_shot.jpg)
 
